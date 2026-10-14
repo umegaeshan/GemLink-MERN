@@ -1,5 +1,7 @@
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
+import jwt from "jsonwebtoken";
+
 
 export async function registerUser(req, res) {
     try {
@@ -84,6 +86,93 @@ export async function registerUser(req, res) {
 
         return res.status(500).json({
             message: "Unable to create account. Please try again later.",
+        });
+    }
+}
+
+export async function loginUser(req, res) {
+    try {
+        const { email, password } = req.body || {};
+
+        if (
+            typeof email !== "string" ||
+            typeof password !== "string"
+        ) {
+            return res.status(400).json({
+                message: "Email and password must be text.",
+            });
+        }
+
+        const cleanEmail = email.trim().toLowerCase();
+
+        if (
+            !cleanEmail ||
+            cleanEmail.length > 254 ||
+            !password ||
+            bcrypt.truncates(password)
+        ) {
+            return res.status(400).json({
+                message: "Please provide valid login details.",
+            });
+        }
+
+        const secret = process.env.JWT_SECRET;
+
+        if (!secret || secret.length < 64) {
+            console.error("JWT_SECRET is missing or too short.");
+
+            return res.status(500).json({
+                message: "Login is temporarily unavailable.",
+            });
+        }
+
+        const user = await User.findOne({
+            email: cleanEmail,
+        }).select("+passwordHash");
+
+        if (!user) {
+            return res.status(401).json({
+                message: "Invalid email or password.",
+            });
+        }
+
+        const passwordMatches = await bcrypt.compare(
+            password,
+            user.passwordHash
+        );
+
+        if (!passwordMatches) {
+            return res.status(401).json({
+                message: "Invalid email or password.",
+            });
+        }
+
+        const token = jwt.sign(
+            { userId: user._id.toString() },
+            secret,
+            {
+                algorithm: "HS256",
+                expiresIn: "30m",
+            }
+        );
+
+        res.set("Cache-Control", "no-store");
+
+        return res.status(200).json({
+            message: "Login successful.",
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+            },
+        });
+    } catch (error) {
+        console.error("Login failed:", error.name);
+
+        return res.status(500).json({
+            message: "Unable to log in. Please try again later.",
         });
     }
 }
