@@ -152,7 +152,7 @@ export async function loginUser(req, res) {
             secret,
             {
                 algorithm: "HS256",
-                expiresIn: "30m",
+                expiresIn: "360m",
             }
         );
 
