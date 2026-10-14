@@ -6,7 +6,7 @@ import authLimiter from "../middleware/authLimiter.js";
 const router = express.Router();
 
 router.post("/register",authLimiter ,registerUser);
-router.post("/login", authLimiter,loginUser);
+router.post("/login", authLimiter, loginUser);
 router.get("/me", protect, getMe);
 
 export default router;

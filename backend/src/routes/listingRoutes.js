@@ -1,5 +1,9 @@
 import express from "express";
-import { createListing } from "../controllers/listingController.js";
+import {
+  createListing,
+  getMyListings,
+  updateListing,
+} from "../controllers/listingController.js";
 import {
   protect,
   requireSeller,
@@ -7,6 +11,8 @@ import {
 
 const router = express.Router();
 
+router.get("/mine", protect, requireSeller, getMyListings);
 router.post("/", protect, requireSeller, createListing);
+router.put("/:id", protect, requireSeller, updateListing);
 
 export default router;
