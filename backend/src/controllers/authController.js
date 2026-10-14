@@ -176,3 +176,16 @@ export async function loginUser(req, res) {
         });
     }
 }
+
+export function getMe(req, res) {
+    res.set("Cache-Control", "no-store");
+
+    return res.status(200).json({
+        user: {
+            id: req.user._id,
+            name: req.user.name,
+            email: req.user.email,
+            role: req.user.role,
+        },
+    });
+}
