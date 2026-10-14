@@ -179,3 +179,36 @@ export async function updateListing(req, res) {
     });
   }
 }
+
+export async function deleteListing(req, res) {
+  try {
+    const { id } = req.params;
+
+    if (!/^[a-fA-F0-9]{24}$/.test(id)) {
+      return res.status(400).json({
+        message: "Invalid listing ID.",
+      });
+    }
+
+    const result = await Listing.deleteOne({
+      _id: id,
+      seller: req.user._id,
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        message: "Listing not found.",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Listing deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Delete listing failed:", error.name);
+
+    return res.status(500).json({
+      message: "Unable to delete listing. Please try again later.",
+    });
+  }
+}
