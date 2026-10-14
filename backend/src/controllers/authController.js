@@ -152,7 +152,7 @@ export async function loginUser(req, res) {
             secret,
             {
                 algorithm: "HS256",
-                expiresIn: "30m",
+                expiresIn: "360m",
             }
         );
 
@@ -175,4 +175,17 @@ export async function loginUser(req, res) {
             message: "Unable to log in. Please try again later.",
         });
     }
+}
+
+export function getMe(req, res) {
+    res.set("Cache-Control", "no-store");
+
+    return res.status(200).json({
+        user: {
+            id: req.user._id,
+            name: req.user.name,
+            email: req.user.email,
+            role: req.user.role,
+        },
+    });
 }
