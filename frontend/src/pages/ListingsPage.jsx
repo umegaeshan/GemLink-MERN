@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import ListingFilters from "../components/ListingFilters";
+import SiteHeader from "../components/SiteHeader";
 
 function ListingCard({ listing }) {
     const [imageFailed, setImageFailed] = useState(false);
@@ -133,17 +134,7 @@ function ListingsPage() {
 
     return (
         <>
-            <header className="site-header">
-                <div className="container header-content">
-                    <Link className="brand" to="/">
-                        GemLink
-                    </Link>
-
-                    <span className="header-note">
-                        Rough Gem Marketplace
-                    </span>
-                </div>
-            </header>
+        <SiteHeader />
 
             <main className="container">
                 <section className="hero">
