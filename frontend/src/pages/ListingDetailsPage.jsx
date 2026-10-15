@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
+import InquiryForm from "../components/InquiryForm";
+import SiteHeader from "../components/SiteHeader";
 
 function ListingPhoto({ src, alt }) {
   const [failed, setFailed] = useState(false);
@@ -79,17 +81,7 @@ function ListingDetailsPage() {
 
   return (
     <>
-      <header className="site-header">
-        <div className="container header-content">
-          <Link className="brand" to="/">
-            GemLink
-          </Link>
-
-          <span className="header-note">
-            Rough Gem Marketplace
-          </span>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="container details-page">
         <Link className="back-link" to="/">
@@ -180,6 +172,10 @@ function ListingDetailsPage() {
                 <p className="detail-description">
                   {listing.description}
                 </p>
+                <InquiryForm
+                  key={listing._id}
+                  listingId={listing._id}
+                />
               </section>
             </div>
 
