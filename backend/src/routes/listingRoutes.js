@@ -10,6 +10,7 @@ import {
 import {
   addListingPhotos,
   getListingPhoto,
+  getPublicListingPhoto,
 } from "../controllers/listingPhotoController.js";
 
 import {
@@ -21,13 +22,41 @@ import {
   uploadListingPhotos,
 } from "../middleware/uploadMiddleware.js";
 
+import {
+  getPublicListings,
+  getPublicListing,
+} from "../controllers/publicListingController.js";
+
+
+
+
+
+
 const router = express.Router();
+router.get("/", getPublicListings);
 
 router.get(
   "/mine",
   protect,
   requireSeller,
   getMyListings
+);
+
+router.get(
+  "/",
+   getPublicListings
+);
+
+router.get(
+  "/mine", 
+  protect, 
+  requireSeller, 
+  getMyListings
+);
+
+router.get(
+  "/:id", 
+  getPublicListing
 );
 
 router.post(
@@ -61,8 +90,12 @@ router.post(
 
 router.get(
   "/:id/photos/:filename",
-  protect,
   getListingPhoto
+);
+
+router.get(
+  "/:id/public-photos/:filename",
+  getPublicListingPhoto
 );
 
 export default router;
