@@ -89,3 +89,19 @@ export function requireSeller(req, res, next) {
 
     next();
 }
+
+export function requireAdmin(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({
+      message: "Please log in first.",
+    });
+  }
+
+  if (req.user.role !== "admin") {
+    return res.status(403).json({
+      message: "Only admins can perform this action.",
+    });
+  }
+
+  next();
+}
