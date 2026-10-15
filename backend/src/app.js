@@ -2,6 +2,7 @@ import express from "express";
 import authRoutes from "./routes/authRoutes.js";
 import listingRoutes from "./routes/listingRoutes.js";
 import adminListingRoutes from "./routes/adminListingRoutes.js";
+import inquiryRoutes from "./routes/inquiryRoutes.js";
 
 const app = express();
 
@@ -17,5 +18,6 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/listings", listingRoutes);
 app.use("/api/admin/listings", adminListingRoutes);
+app.use("/api/inquiries", inquiryRoutes);
 
 export default app;
