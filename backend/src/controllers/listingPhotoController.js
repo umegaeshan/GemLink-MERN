@@ -234,3 +234,63 @@ export async function getListingPhoto(req, res, next) {
     });
   }
 }
+
+export async function getPublicListingPhoto(req, res, next) {
+  try {
+    const { id, filename } = req.params;
+
+    if (
+      !listingIdPattern.test(id) ||
+      !photoNamePattern.test(filename)
+    ) {
+      return res.status(400).json({
+        message: "Invalid listing ID or photo filename.",
+      });
+    }
+
+    const photoPath = "/uploads/" + filename;
+
+    const listing = await Listing.findOne({
+      _id: id,
+      status: "approved",
+      photos: photoPath,
+    }).select("_id");
+
+    if (!listing) {
+      return res.status(404).json({
+        message: "Photo not found.",
+      });
+    }
+
+    res.set("Cache-Control", "no-store");
+    res.set("X-Content-Type-Options", "nosniff");
+
+    return res.sendFile(
+      path.join(uploadFolder, filename),
+      (error) => {
+        if (!error) {
+          return;
+        }
+
+        if (res.headersSent) {
+          return next(error);
+        }
+
+        const notFound =
+          error.code === "ENOENT" || error.status === 404;
+
+        return res.status(notFound ? 404 : 500).json({
+          message: notFound
+            ? "Photo file not found."
+            : "Unable to load photo.",
+        });
+      }
+    );
+  } catch (error) {
+    console.error("Load public photo failed:", error.name);
+
+    return res.status(500).json({
+      message: "Unable to load photo.",
+    });
+  }
+}
