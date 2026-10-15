@@ -1,4 +1,11 @@
 import Listing from "../models/Listing.js";
+import { unlink } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const uploadFolder = fileURLToPath(
+  new URL("../../uploads/", import.meta.url)
+);
 
 // Create a listing.
 export async function createListing(req, res) {
@@ -190,19 +197,63 @@ export async function deleteListing(req, res) {
       });
     }
 
-    const result = await Listing.deleteOne({
+    const listing = await Listing.findOneAndDelete({
       _id: id,
       seller: req.user._id,
     });
 
-    if (result.deletedCount === 0) {
+    if (!listing) {
       return res.status(404).json({
         message: "Listing not found.",
       });
     }
 
+    let cleanupFailed = false;
+
+    for (const photoPath of listing.photos) {
+      if (
+        typeof photoPath !== "string" ||
+        !photoPath.startsWith("/uploads/")
+      ) {
+        cleanupFailed = true;
+        continue;
+      }
+
+      const filename = photoPath.slice("/uploads/".length);
+
+      // Allow only a filename, never a nested path.
+      const validFilename =
+        filename.length > 0 &&
+        !filename.includes("/") &&
+        !filename.includes("\\") &&
+        !filename.includes(":") &&
+        filename.toLowerCase().endsWith(".webp");
+
+      if (!validFilename) {
+        cleanupFailed = true;
+        continue;
+      }
+
+      const fullPath = path.join(uploadFolder, filename);
+
+      try {
+        await unlink(fullPath);
+      } catch (error) {
+        if (error.code !== "ENOENT") {
+          cleanupFailed = true;
+          console.error(
+            "Photo cleanup failed:",
+            filename,
+            error.code
+          );
+        }
+      }
+    }
+
     return res.status(200).json({
-      message: "Listing deleted successfully.",
+      message: cleanupFailed
+        ? "Listing deleted, but some photo files could not be removed."
+        : "Listing and its photos deleted successfully.",
     });
   } catch (error) {
     console.error("Delete listing failed:", error.name);
