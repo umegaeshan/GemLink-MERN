@@ -1,81 +1,59 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { useSearchParams } from "react-router";
 import ListingFilters from "../components/ListingFilters";
+import GemstoneCard from "../components/GemstoneCard";
 import SiteHeader from "../components/SiteHeader";
-
-function ListingCard({ listing }) {
-    const [imageFailed, setImageFailed] = useState(false);
-
-    const firstPhoto = listing.photos?.[0];
-    const filename = firstPhoto?.split("/").pop();
-
-    const imageUrl = filename
-        ? `/api/listings/${listing._id}/public-photos/${encodeURIComponent(filename)}`
-        : "";
-
-    return (
-        <article className="listing-card">
-            {imageUrl && !imageFailed ? (
-                <img
-                    className="listing-image"
-                    src={imageUrl}
-                    alt={listing.title}
-                    loading="lazy"
-                    onError={() => setImageFailed(true)}
-                />
-            ) : (
-                <div className="image-placeholder">
-                    Photo unavailable
-                </div>
-            )}
-
-            <div className="listing-content">
-                <span className="listing-type">
-                    {listing.listingType === "lot"
-                        ? "Gem lot"
-                        : "Individual stone"}
-                </span>
-
-                <h2>{listing.title}</h2>
-
-                <p className="listing-price">
-                    LKR {listing.askingPrice.toLocaleString("en-LK")}
-                </p>
-
-                <p className="listing-meta">
-                    {listing.weightCarats} ct · {listing.stoneCount}{" "}
-                    {listing.stoneCount === 1 ? "stone" : "stones"}
-                </p>
-
-                <p className="listing-location">
-                    {listing.location}
-                </p>
-                <Link
-                    className="details-link"
-                    to={`/listings/${listing._id}`}
-                >
-                    View details
-                </Link>
-            </div>
-        </article>
-    );
-}
+import SiteFooter from "../components/SiteFooter";
 
 function ListingsPage() {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const query = searchParams.toString();
+
+    const pageText = searchParams.get("page") || "1";
+    const pageValue = Number(pageText);
+
+    const page =
+        /^[1-9][0-9]*$/.test(pageText) &&
+            Number.isSafeInteger(pageValue) &&
+            pageValue <= 10000
+            ? pageValue
+            : 1;
+
+    const initialFilters = {
+        search: searchParams.get("search") || "",
+        listingType: ["individual", "lot"].includes(
+            searchParams.get("listingType")
+        )
+            ? searchParams.get("listingType")
+            : "",
+        location: searchParams.get("location") || "",
+        minPrice: searchParams.get("minPrice") || "",
+        maxPrice: searchParams.get("maxPrice") || "",
+    };
+
     const [listings, setListings] = useState([]);
-    const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
     const [total, setTotal] = useState(0);
-
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [retryCount, setRetryCount] = useState(0);
 
-    const [appliedFilters, setAppliedFilters] = useState({});
-
     function applyFilters(filters) {
-        setAppliedFilters(filters);
-        setPage(1);
+        const params = new URLSearchParams();
+
+        for (const [name, value] of Object.entries(filters)) {
+            if (value !== "") {
+                params.set(name, value);
+            }
+        }
+
+        setSearchParams(params);
+    }
+
+    function changePage(nextPage) {
+        const params = new URLSearchParams(searchParams);
+        params.set("page", String(nextPage));
+        setSearchParams(params);
     }
 
     useEffect(() => {
@@ -86,27 +64,16 @@ function ListingsPage() {
             setError("");
 
             try {
-                const params = new URLSearchParams({
-                    page: String(page),
+                const params = new URLSearchParams(query);
+                params.set("page", String(page));
+
+                const response = await fetch(`/api/listings?${params}`, {
+                    signal: controller.signal,
                 });
 
-                for (const [key, value] of Object.entries(appliedFilters)) {
-                    if (value !== "") {
-                        params.set(key, value);
-                    }
-                }
-
-                const response = await fetch(
-                    `/api/listings?${params.toString()}`,
-                    {
-                        signal: controller.signal,
-                    }
-                );
-
                 if (!response.ok) {
-                    throw new Error(
-                        "Unable to load listings. Please try again."
-                    );
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(data.message || "Unable to load gemstones.");
                 }
 
                 const data = await response.json();
@@ -130,118 +97,101 @@ function ListingsPage() {
         loadListings();
 
         return () => controller.abort();
-    }, [page, retryCount, appliedFilters]);
+    }, [query, page, retryCount]);
 
     return (
         <>
-        <SiteHeader />
+            <SiteHeader />
 
-            <main className="container">
-                <section className="hero">
-                    <p className="eyebrow">
-                        EXPLORE ROUGH GEMSTONES
-                    </p>
-
-                    <h1>Find your next discovery.</h1>
-
+            <main className="container browse-page">
+                <section className="browse-heading">
+                    <p className="eyebrow">THE MARKETPLACE</p>
+                    <h1>Browse gemstones</h1>
                     <p>
-                        Browse individual rough stones and gem lots
-                        listed by sellers.
+                        Find a stone you like. Open it to see photos,
+                        read the details and ask the seller a question.
                     </p>
                 </section>
 
-                <aside className="authenticity-notice">
-                    Gem type and details are seller-provided.
-                    Listing approval does not certify authenticity.
-                </aside>
+                <div className="browse-layout">
+                    <aside className="browse-sidebar" aria-label="Filter gemstones">
+                        <ListingFilters
+                            key={query}
+                            initialFilters={initialFilters}
+                            onApply={applyFilters}
+                        />
+                    </aside>
 
-                <ListingFilters onApply={applyFilters} />
+                    <section className="market-section" aria-label="Gemstone results">
+                        <div className="section-heading">
+                            <h2>Available gemstones</h2>
+                            {!loading && !error && (
+                                <span>{total} {total === 1 ? "listing" : "listings"} found</span>
+                            )}
+                        </div>
 
-                <section
-                    className="market-section"
-                    aria-label="Gem listings"
-                >
-                    <div className="section-heading">
-                        <h2>Explore listings</h2>
-
-                        {!loading && !error && (
-                            <span>
-                                {total} {total === 1 ? "listing" : "listings"}
-                            </span>
+                        {loading ? (
+                            <p className="state-box" role="status">Finding gemstones...</p>
+                        ) : error ? (
+                            <div className="state-box" role="alert">
+                                <p>{error}</p>
+                                <div className="state-actions">
+                                    <button onClick={() => setRetryCount((count) => count + 1)}>
+                                        Try again
+                                    </button>
+                                    <button
+                                        className="secondary-button"
+                                        onClick={() => setSearchParams({})}
+                                    >
+                                        Reset search
+                                    </button>
+                                </div>
+                            </div>
+                        ) : listings.length === 0 ? (
+                            <div className="state-box">
+                                <h3>No gemstones found</h3>
+                                <p>Try a different search or remove your filters.</p>
+                                <button onClick={() => setSearchParams({})}>
+                                    Show all gemstones
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="listing-grid">
+                                {listings.map((listing) => (
+                                    <GemstoneCard key={listing._id} listing={listing} />
+                                ))}
+                            </div>
                         )}
-                    </div>
 
-                    {loading ? (
-                        <p className="state-box" role="status">
-                            Loading listings...
-                        </p>
-                    ) : error ? (
-                        <div className="state-box" role="alert">
-                            <p>{error}</p>
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setRetryCount((count) => count + 1)
-                                }
-                            >
-                                Try again
-                            </button>
-                        </div>
-                    ) : listings.length === 0 ? (
-                        <p className="state-box">
-                            No listings found on this page. Try changing
-                            your filters or returning to the previous page.
-                        </p>
-                    ) : (
-                        <div className="listing-grid">
-                            {listings.map((listing) => (
-                                <ListingCard
-                                    key={listing._id}
-                                    listing={listing}
-                                />
-                            ))}
-                        </div>
-                    )}
-
-                    {!loading &&
-                        !error &&
-                        (totalPages > 1 || page > 1) && (
-                            <nav
-                                className="pagination"
-                                aria-label="Listing pages"
-                            >
+                        {!loading && !error && (totalPages > 1 || page > 1) && (
+                            <nav className="pagination" aria-label="Results pages">
                                 <button
-                                    type="button"
                                     disabled={page === 1}
-                                    onClick={() =>
-                                        setPage((current) => current - 1)
-                                    }
+                                    onClick={() => changePage(page - 1)}
                                 >
                                     Previous
                                 </button>
 
-                                <span>
-                                    Page {page} · {totalPages} total pages
-                                </span>
+                                <span>Page {page} · {totalPages} total pages</span>
 
                                 <button
-                                    type="button"
                                     disabled={page >= totalPages}
-                                    onClick={() =>
-                                        setPage((current) => current + 1)
-                                    }
+                                    onClick={() => changePage(page + 1)}
                                 >
                                     Next
                                 </button>
                             </nav>
                         )}
-                </section>
+
+                        <p className="market-disclaimer">
+                            Seller-provided details. Approval does not certify
+                            gemstone authenticity.
+                        </p>
+                    </section>
+                </div>
             </main>
 
-            <footer className="site-footer">
-                GemLink · Connect with rough gem sellers.
-            </footer>
+            <SiteFooter />
         </>
     );
 }

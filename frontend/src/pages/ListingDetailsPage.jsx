@@ -1,28 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
+
 import InquiryForm from "../components/InquiryForm";
 import SiteHeader from "../components/SiteHeader";
-
-function ListingPhoto({ src, alt }) {
-  const [failed, setFailed] = useState(false);
-
-  if (failed) {
-    return (
-      <div className="image-placeholder">
-        Photo unavailable
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className="detail-photo"
-      onError={() => setFailed(true)}
-    />
-  );
-}
+import SiteFooter from "../components/SiteFooter";
+import ListingGallery from "../components/ListingGallery";
 
 function ListingDetailsPage() {
   const { id } = useParams();
@@ -55,10 +37,16 @@ function ListingDetailsPage() {
         }
 
         if (!response.ok) {
-          throw new Error("Unable to load this listing.");
+          throw new Error(
+            "Unable to load this listing. Please try again."
+          );
         }
 
         const data = await response.json();
+
+        if (!data.listing) {
+          throw new Error("Listing details are unavailable.");
+        }
 
         if (!controller.signal.aborted) {
           setListing(data.listing);
@@ -84,19 +72,20 @@ function ListingDetailsPage() {
       <SiteHeader />
 
       <main className="container details-page">
-        <Link className="back-link" to="/">
-          ← Back to listings
+        <Link className="back-link" to="/browse">
+          ← Back to gemstones
         </Link>
 
         {loading ? (
           <p className="state-box" role="status">
-            Loading listing...
+            Loading gemstone details...
           </p>
         ) : error ? (
           <div className="state-box" role="alert">
             <p>{error}</p>
 
             <button
+              type="button"
               onClick={() => setRetryCount((count) => count + 1)}
             >
               Try again
@@ -105,41 +94,24 @@ function ListingDetailsPage() {
         ) : listing ? (
           <>
             <div className="details-layout">
+              <ListingGallery
+                key={listing._id}
+                listing={listing}
+              />
+
               <section
-                className="detail-gallery"
-                aria-label="Listing photos"
+                className="details-panel"
+                aria-labelledby="listing-title"
               >
-                {listing.photos.length > 0 ? (
-                  listing.photos.map((photo, index) => {
-                    const filename = photo.split("/").pop();
-
-                    const imageUrl =
-                      `/api/listings/${listing._id}/public-photos/` +
-                      encodeURIComponent(filename);
-
-                    return (
-                      <ListingPhoto
-                        key={photo}
-                        src={imageUrl}
-                        alt={`${listing.title}, photo ${index + 1}`}
-                      />
-                    );
-                  })
-                ) : (
-                  <div className="image-placeholder">
-                    No photos available
-                  </div>
-                )}
-              </section>
-
-              <section className="details-panel">
                 <span className="listing-type">
                   {listing.listingType === "lot"
-                    ? "Gem lot"
-                    : "Individual stone"}
+                    ? "Gemstone bundle"
+                    : "Single gemstone"}
                 </span>
 
-                <h1>{listing.title}</h1>
+                <h1 id="listing-title">{listing.title}</h1>
+
+                <p className="inquiry-note">Asking price</p>
 
                 <p className="listing-price">
                   LKR {listing.askingPrice.toLocaleString("en-LK")}
@@ -148,7 +120,7 @@ function ListingDetailsPage() {
                 <dl className="detail-facts">
                   <div>
                     <dt>Total weight</dt>
-                    <dd>{listing.weightCarats} ct</dd>
+                    <dd>{listing.weightCarats} carats</dd>
                   </div>
 
                   <div>
@@ -172,6 +144,7 @@ function ListingDetailsPage() {
                 <p className="detail-description">
                   {listing.description}
                 </p>
+
                 <InquiryForm
                   key={listing._id}
                   listingId={listing._id}
@@ -186,6 +159,8 @@ function ListingDetailsPage() {
           </>
         ) : null}
       </main>
+
+      <SiteFooter />
     </>
   );
 }
