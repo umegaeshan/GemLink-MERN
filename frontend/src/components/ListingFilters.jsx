@@ -8,8 +8,12 @@ const emptyFilters = {
   maxPrice: "",
 };
 
-function ListingFilters({ onApply }) {
-  const [filters, setFilters] = useState({ ...emptyFilters });
+function ListingFilters({ initialFilters = {}, onApply }) {
+  const [filters, setFilters] = useState(() => ({
+    ...emptyFilters,
+    ...initialFilters,
+  }));
+
   const [error, setError] = useState("");
 
   function handleChange(event) {
@@ -26,12 +30,26 @@ function ListingFilters({ onApply }) {
   function handleSubmit(event) {
     event.preventDefault();
 
+    const pricePattern = /^[0-9]+([.][0-9]{1,2})?$/;
+
+    for (const price of [filters.minPrice, filters.maxPrice]) {
+      if (
+        price !== "" &&
+        (!pricePattern.test(price) ||
+          !Number.isFinite(Number(price)) ||
+          Number(price) > Number.MAX_SAFE_INTEGER)
+      ) {
+        setError("Enter a valid price with up to two decimal places.");
+        return;
+      }
+    }
+
     if (
       filters.minPrice !== "" &&
       filters.maxPrice !== "" &&
       Number(filters.minPrice) > Number(filters.maxPrice)
     ) {
-      setError("Minimum price cannot exceed maximum price.");
+      setError("Minimum price cannot be higher than maximum price.");
       return;
     }
 
@@ -44,21 +62,21 @@ function ListingFilters({ onApply }) {
     });
   }
 
-  function handleClear() {
+  function clearFilters() {
     setFilters({ ...emptyFilters });
     setError("");
     onApply({ ...emptyFilters });
   }
 
   return (
-    <form className="filters" onSubmit={handleSubmit}>
-      <div className="filter-grid">
+    <form className="filters simple-filters" onSubmit={handleSubmit}>
+      <div className="search-row">
         <label className="filter-field">
-          Search
+          What are you looking for?
           <input
             type="search"
             name="search"
-            placeholder="Search listing titles"
+            placeholder="Search gemstone titles"
             value={filters.search}
             onChange={handleChange}
             maxLength={120}
@@ -66,74 +84,88 @@ function ListingFilters({ onApply }) {
         </label>
 
         <label className="filter-field">
-          Listing type
+          Show me
           <select
             name="listingType"
             value={filters.listingType}
             onChange={handleChange}
           >
-            <option value="">All types</option>
-            <option value="individual">Individual stone</option>
-            <option value="lot">Gem lot</option>
+            <option value="">All gemstones</option>
+            <option value="individual">Single gemstones</option>
+            <option value="lot">Gemstone bundles</option>
           </select>
         </label>
 
-        <label className="filter-field">
-          Location
-          <input
-            type="text"
-            name="location"
-            placeholder="e.g. Ratnapura"
-            value={filters.location}
-            onChange={handleChange}
-            maxLength={120}
-          />
-        </label>
-
-        <label className="filter-field">
-          Minimum price (LKR)
-          <input
-            type="number"
-            name="minPrice"
-            min="0"
-            step="0.01"
-            placeholder="Any"
-            value={filters.minPrice}
-            onChange={handleChange}
-          />
-        </label>
-
-        <label className="filter-field">
-          Maximum price (LKR)
-          <input
-            type="number"
-            name="maxPrice"
-            min="0"
-            step="0.01"
-            placeholder="Any"
-            value={filters.maxPrice}
-            onChange={handleChange}
-          />
-        </label>
+        <button type="submit">Search gemstones</button>
       </div>
+
+      <details
+        className="extra-filters"
+        open={
+          Boolean(
+            initialFilters.location ||
+            initialFilters.minPrice ||
+            initialFilters.maxPrice
+          ) || undefined
+        }
+      >
+        <summary>More filters: location & price</summary>
+
+        <div className="filter-grid">
+          <label className="filter-field">
+            Location
+            <input
+              name="location"
+              placeholder="e.g. Ratnapura"
+              value={filters.location}
+              onChange={handleChange}
+              maxLength={120}
+            />
+          </label>
+
+          <label className="filter-field">
+            Minimum price (LKR)
+            <input
+              type="number"
+              name="minPrice"
+              min="0"
+              step="0.01"
+              placeholder="Any price"
+              value={filters.minPrice}
+              onChange={handleChange}
+            />
+          </label>
+
+          <label className="filter-field">
+            Maximum price (LKR)
+            <input
+              type="number"
+              name="maxPrice"
+              min="0"
+              step="0.01"
+              placeholder="Any price"
+              value={filters.maxPrice}
+              onChange={handleChange}
+            />
+          </label>
+        </div>
+
+        <button className="apply-extra" type="submit">
+          Apply filters
+        </button>
+      </details>
 
       {error && (
-        <p className="filter-error" role="alert">
-          {error}
-        </p>
+        <p className="filter-error" role="alert">{error}</p>
       )}
 
-      <div className="filter-actions">
-        <button type="submit">Search listings</button>
-
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={handleClear}
-        >
-          Clear filters
-        </button>
-      </div>
+      <button
+        className="clear-filters"
+        type="button"
+        onClick={clearFilters}
+      >
+        Clear all filters
+      </button>
     </form>
   );
 }

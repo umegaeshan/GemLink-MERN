@@ -1,11 +1,9 @@
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Link,
-} from "react-router";
-
+import { BrowserRouter, Routes, Route, Link } from "react-router";
 import AuthProvider from "./context/AuthProvider";
+
+import HomePage from "./pages/HomePage";
+import AboutPage from "./pages/AboutPage";
+import ContactPage from "./pages/ContactPage";
 import ListingsPage from "./pages/ListingsPage";
 import ListingDetailsPage from "./pages/ListingDetailsPage";
 import LoginPage from "./pages/LoginPage";
@@ -17,64 +15,39 @@ import CreateListingPage from "./pages/CreateListingPage";
 import EditListingPage from "./pages/EditListingPage";
 import AdminListingsPage from "./pages/AdminListingsPage";
 
-
-
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<ListingsPage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/browse" element={<ListingsPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           <Route path="/login" element={<LoginPage />} />
-
           <Route path="/register" element={<RegisterPage />} />
 
-          <Route
-            path="/listings/:id"
-            element={<ListingDetailsPage />}
-          />
+          <Route path="/listings/:id" element={<ListingDetailsPage />} />
+
+          <Route path="/my-inquiries" element={<MyInquiriesPage />} />
+          <Route path="/received-inquiries" element={<ReceivedInquiriesPage />} />
+
+          <Route path="/my-listings" element={<MyListingsPage />} />
+          <Route path="/my-listings/new" element={<CreateListingPage />} />
+          <Route path="/my-listings/:id/edit" element={<EditListingPage />} />
+
+          <Route path="/admin/listings" element={<AdminListingsPage />} />
 
           <Route
             path="*"
             element={
-              <main className="container details-page">
+              <main className="container information-page">
                 <h1>Page not found</h1>
-                <Link to="/">Back to listings</Link>
+                <Link className="gem-button" to="/">Back to home</Link>
               </main>
             }
           />
-
-          <Route
-            path="/my-inquiries"
-            element={<MyInquiriesPage />}
-          />
-
-          <Route
-            path="/received-inquiries"
-            element={<ReceivedInquiriesPage />}
-          />
-
-          <Route
-            path="/my-listings"
-            element={<MyListingsPage />}
-          />
-
-          <Route
-            path="/my-listings/:id/edit"
-            element={<EditListingPage />}
-          />
-
-          <Route
-            path="/my-listings/new"
-            element={<CreateListingPage />}
-          />
-
-          <Route
-  path="/admin/listings"
-  element={<AdminListingsPage />}
-/>
-
         </Routes>
       </BrowserRouter>
     </AuthProvider>
