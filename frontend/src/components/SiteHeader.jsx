@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router";
 import AuthContext from "../context/AuthContext";
+import NavbarSearch from "./NavbarSearch";
 
 function SiteHeader() {
   const { user, logout } = useContext(AuthContext);
@@ -10,7 +11,11 @@ function SiteHeader() {
   const accountRef = useRef(null);
 
   const navigate = useNavigate();
-  const canSell = !user || user.role === "seller";
+
+  const isAdmin = user?.role === "admin";
+  const isBuyer = user?.role === "buyer";
+  const isSeller = user?.role === "seller";
+  const canSell = !user || isSeller;
 
   useEffect(() => {
     function handleOutsideClick(event) {
@@ -24,7 +29,10 @@ function SiteHeader() {
     document.addEventListener("pointerdown", handleOutsideClick);
 
     return () => {
-      document.removeEventListener("pointerdown", handleOutsideClick);
+      document.removeEventListener(
+        "pointerdown",
+        handleOutsideClick
+      );
     };
   }, []);
 
@@ -107,18 +115,70 @@ function SiteHeader() {
               Browse gemstones
             </NavLink>
 
-            <Link to="/#how-it-works" onClick={closeMenus}>
-              How it works
-            </Link>
+            {isAdmin ? (
+              <>
+                <NavLink
+                  to="/admin/stones"
+                  onClick={closeMenus}
+                >
+                  Stone management
+                </NavLink>
 
-            <NavLink to="/about" onClick={closeMenus}>
-              About us
-            </NavLink>
+                <NavLink
+                  to="/admin/users"
+                  onClick={closeMenus}
+                >
+                  User management
+                </NavLink>
 
-            <NavLink to="/contact" onClick={closeMenus}>
-              Contact us
-            </NavLink>
+                <NavLink
+                  to="/admin/listings"
+                  onClick={closeMenus}
+                >
+                  Review management
+                </NavLink>
+              </>
+            ) : (
+              <>
+                {!user && (
+                  <Link
+                    to="/#how-it-works"
+                    onClick={closeMenus}
+                  >
+                    How it works
+                  </Link>
+                )}
+
+                {isBuyer && (
+                  <NavLink
+                    to="/my-inquiries"
+                    onClick={closeMenus}
+                  >
+                    My messages
+                  </NavLink>
+                )}
+
+                {isSeller && (
+                  <NavLink
+                    to="/received-inquiries"
+                    onClick={closeMenus}
+                  >
+                    Buyer messages
+                  </NavLink>
+                )}
+
+                <NavLink to="/about" onClick={closeMenus}>
+                  About us
+                </NavLink>
+
+                <NavLink to="/contact" onClick={closeMenus}>
+                  Contact us
+                </NavLink>
+              </>
+            )}
           </div>
+
+          <NavbarSearch onSearch={closeMenus} />
 
           <div className="account-navigation">
             {!user ? (
@@ -126,9 +186,15 @@ function SiteHeader() {
                 Log in
               </Link>
             ) : (
-              <details className="account-menu" ref={accountRef}>
+              <details
+                className="account-menu"
+                ref={accountRef}
+              >
                 <summary>
-                  <span className="account-avatar" aria-hidden="true">
+                  <span
+                    className="account-avatar"
+                    aria-hidden="true"
+                  >
                     <svg
                       width="20"
                       height="20"
@@ -170,42 +236,34 @@ function SiteHeader() {
                     <span>{user.role} account</span>
                   </p>
 
-                  {user.role === "buyer" && (
-                    <Link to="/my-inquiries" onClick={closeMenus}>
-                      My messages
-                    </Link>
-                  )}
-
-                  {user.role === "seller" && (
+                  {isSeller && (
                     <>
-                      <Link to="/my-listings" onClick={closeMenus}>
+                      <Link
+                        to="/my-listings"
+                        onClick={closeMenus}
+                      >
                         My listings
                       </Link>
 
-                      <Link to="/my-listings/new" onClick={closeMenus}>
-                        Add a gemstone
-                      </Link>
-
                       <Link
-                        to="/received-inquiries"
+                        to="/my-listings/new"
                         onClick={closeMenus}
                       >
-                        Buyer messages
+                        Add a gemstone
                       </Link>
                     </>
                   )}
 
-                  {user.role === "admin" && (
-                    <Link to="/admin/listings" onClick={closeMenus}>
-                      Review submissions
+                  {!isAdmin && (
+                    <Link to="/contact" onClick={closeMenus}>
+                      Help
                     </Link>
                   )}
 
-                  <Link to="/contact" onClick={closeMenus}>
-                    Help
-                  </Link>
-
-                  <button type="button" onClick={handleLogout}>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                  >
                     Log out
                   </button>
                 </div>
