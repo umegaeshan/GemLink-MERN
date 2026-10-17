@@ -14,6 +14,8 @@ import MyListingsPage from "./pages/MyListingsPage";
 import CreateListingPage from "./pages/CreateListingPage";
 import EditListingPage from "./pages/EditListingPage";
 import AdminListingsPage from "./pages/AdminListingsPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminStonesPage from "./pages/AdminStonesPage";
 
 function App() {
   return (
@@ -31,20 +33,30 @@ function App() {
           <Route path="/listings/:id" element={<ListingDetailsPage />} />
 
           <Route path="/my-inquiries" element={<MyInquiriesPage />} />
-          <Route path="/received-inquiries" element={<ReceivedInquiriesPage />} />
+          <Route
+            path="/received-inquiries"
+            element={<ReceivedInquiriesPage />}
+          />
 
           <Route path="/my-listings" element={<MyListingsPage />} />
           <Route path="/my-listings/new" element={<CreateListingPage />} />
-          <Route path="/my-listings/:id/edit" element={<EditListingPage />} />
+          <Route
+            path="/my-listings/:id/edit"
+            element={<EditListingPage />}
+          />
 
           <Route path="/admin/listings" element={<AdminListingsPage />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/stones" element={<AdminStonesPage />} />
 
           <Route
             path="*"
             element={
               <main className="container information-page">
                 <h1>Page not found</h1>
-                <Link className="gem-button" to="/">Back to home</Link>
+                <Link className="gem-button" to="/">
+                  Back to home
+                </Link>
               </main>
             }
           />
